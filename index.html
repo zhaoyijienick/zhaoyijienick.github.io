@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>刷牙小游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f0f9fb;
+            touch-action: manipulation;
+        }
+
+        #score {
+            font-size: 20px;
+            font-family: Arial;
+            padding: 15px;
+            color: #00796b;
+            text-align: center;
+            position: fixed;
+            width: 100%;
+            background: rgba(224, 247, 250, 0.9);
+            z-index: 1;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        #gameArea {
+			height: calc(100vh - 60vh);
+			position: fixed;
+			top: 60vh;
+			left: 10vw;
+            width: 80vw;
+            overflow: hidden;
+
+        }
+		#bag{
+			height: calc(100vh - 70px);
+			width: 100vw;
+			position: fixed;
+			top: 70px;
+			left: 0;
+			overflow: hidden;
+			background-size:cover;
+			background-position: center;
+			background-image: url("background.jpg") ;
+		}
+
+
+        .box {
+            width: 12vw;
+            height: 18vw;
+            min-width: 40px;
+            min-height: 60px;
+            position: absolute;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .white-box {
+			
+			height: 5vh;
+			width: 9vh;
+			background-position: center;
+            background: url("bug.png");
+			background-size:cover;
+
+        }
+
+        .black-box {
+
+            animation: shrinkDisappear 2s linear forwards;
+            cursor: default;
+            pointer-events: none;
+			
+			height: 5vh;
+			width: 15vh;
+			background-position: center;
+			background: url("paopao.png");
+			background-size:cover;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-30px); }
+        }
+
+        @keyframes shrinkDisappear {
+            0% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            90% {
+                opacity: 0.8;
+                transform: scale(0.95);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+        }
+
+        .score-effect {
+            position: absolute;
+            font-size: 4vw;
+            color: #00796b;
+            animation: floatUp 0.8s ease-out forwards;
+            user-select: none;
+        }
+
+        @media (orientation: landscape) {
+            .box {
+                width: 8vh;
+                height: 12vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="score">消灭细菌数量：0</div>
+	<div id="bag"></div>
+	<div id="gameArea"></div>
+
+
+    <script>
+        class Game {
+            constructor() {
+                this.gameArea = document.getElementById('gameArea');
+                this.scoreElement = document.getElementById('score');
+                this.score = 0;
+                this.isTouchDevice = 'ontouchstart' in window;
+                this.init();
+            }
+
+            init() {
+                this.bindEvents();
+                this.startSpawning();
+                this.handleResize();
+            }
+
+            bindEvents() {
+                window.addEventListener('resize', () => this.handleResize());
+                this.gameArea.addEventListener(
+                    this.isTouchDevice ? 'touchstart' : 'click',
+                    (e) => this.handleInteraction(e)
+                );
+                document.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+
+            handleResize() {
+                this.gameArea.style.height = `${window.innerHeight - 70}px`;
+            }
+
+            createBox() {
+                const box = document.createElement('div');
+                box.className = 'box white-box';
+                
+                const setPosition = () => {
+                    const rect = this.gameArea.getBoundingClientRect();
+                    const maxX = rect.width - box.offsetWidth;
+                    const maxY = rect.height - box.offsetHeight;
+                    
+                    box.style.left = Math.random() * maxX + 'px';
+                    box.style.top = Math.random() * maxY + 'px';
+                };
+
+                // 首次渲染后获取准确尺寸
+                this.gameArea.appendChild(box);
+                requestAnimationFrame(() => {
+                    setPosition();
+                    box.style.opacity = '1'; // 淡入效果
+                });
+
+                return box;
+            }
+
+            handleInteraction(e) {
+                const target = e.target.closest('.white-box');
+                if (!target) return;
+
+                this.convertToBlackBox(target);
+                this.updateScore();
+                this.createScoreEffect(target);
+            }
+
+            convertToBlackBox(element) {
+                element.classList.replace('white-box', 'black-box');
+                setTimeout(() => element.remove(), 3000);
+            }
+
+            updateScore() {
+                this.score++;
+                this.scoreElement.textContent = `消灭细菌数量：${this.score}`;
+            }
+
+            createScoreEffect(element) {
+                const effect = document.createElement('div');
+                effect.className = 'score-effect';
+                effect.style.left = `${element.offsetLeft + element.offsetWidth/2}px`;
+                effect.style.top = `${element.offsetTop + element.offsetHeight/2}px`;
+                effect.textContent = '+1';
+                this.gameArea.appendChild(effect);
+                setTimeout(() => effect.remove(), 800);
+            }
+
+            startSpawning() {
+                setInterval(() => this.createBox(), 1000);
+            }
+        }
+
+        // 启动游戏
+        new Game();
+    </script>
+</body>
+</html>
